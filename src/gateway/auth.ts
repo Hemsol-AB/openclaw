@@ -235,14 +235,6 @@ export function assertGatewayAuthConfigured(auth: ResolvedGatewayAuth): void {
   }
 }
 
-function getIapUser(req?: IncomingMessage): string | null {
-  const email = req?.headers["x-goog-authenticated-user-email"];
-  if (typeof email === "string" && email.trim()) {
-    return email.replace("accounts.google.com:", "").trim();
-  }
-  return null;
-}
-
 export async function authorizeGatewayConnect(params: {
   auth: ResolvedGatewayAuth;
   connectAuth?: ConnectAuth | null;
@@ -253,16 +245,6 @@ export async function authorizeGatewayConnect(params: {
   const { auth, connectAuth, req, trustedProxies } = params;
   const tailscaleWhois = params.tailscaleWhois ?? readTailscaleWhoisIdentity;
   const localDirect = isLocalDirectRequest(req, trustedProxies);
-
-  // Trust Google IAP headers for seamless authentication
-  const iapUser = getIapUser(req);
-  if (iapUser) {
-    return {
-      ok: true,
-      method: "iap" as any,
-      user: iapUser,
-    };
-  }
 
   if (auth.allowTailscale && !localDirect) {
     const tailscaleCheck = await resolveVerifiedTailscaleUser({
